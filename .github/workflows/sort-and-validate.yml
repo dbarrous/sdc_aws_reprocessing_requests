@@ -1,0 +1,83 @@
+# .github/workflows/sort-and-validate.yml
+name: Process Reprocessing Request
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize, reopened ]
+
+env:
+  PYTHON_VERSION: '3.10'
+
+jobs:
+  validate-and-sort:
+    name: Validate and Sort Request
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push changes back to PR
+      pull-requests: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Find request.json
+        id: find-request
+        run: |
+          REQUEST_PATH=$(find . -name "request.json" -not -path "./requests/*")
+          if [ -z "$REQUEST_PATH" ]; then
+            echo "::error::No request.json found in PR changes"
+            exit 1
+          fi
+          echo "request_path=$REQUEST_PATH" >> $GITHUB_OUTPUT
+
+      - name: Run file sorter
+        id: process-request
+        run: |
+          python scripts/file_sorter.py \
+            --request-file "${{ steps.find-request.outputs.request_path }}" \
+            --username "${{ github.actor }}" \
+            --timestamp "$(date +%Y%m%d%H%M%S)"
+
+      - name: Commit sorted request
+        if: success()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "[ci skip] Automated request sorting"
+          git push
+
+  generate-payloads:
+    name: Generate Payloads
+    needs: validate-and-sort
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Generate final payloads
+        run: |
+          # Add your payload generation and Lambda invocation logic here
+          echo "Payload generation would execute for:"
+          find requests/ -name "*.json" -exec echo "Processing {}" \;

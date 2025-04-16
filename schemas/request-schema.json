@@ -1,0 +1,79 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Reprocessing Request Schema",
+  "description": "Schema for validating reprocessing requests",
+  "type": "object",
+  "properties": {
+    "requests": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "request_instrument": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_]+$",
+                "description": "Instrument name (case-insensitive)"
+              },
+              "request_from_date": {
+                "type": "string",
+                "pattern": "^\\d{8}$",
+                "description": "Start date in YYYYMMDD format"
+              },
+              "request_to_date": {
+                "type": "string",
+                "pattern": "^\\d{8}$",
+                "description": "End date in YYYYMMDD format"
+              },
+              "request_from_level": {
+                "type": "string",
+                "pattern": "^l\\d+$",
+                "description": "Data level to start reprocessing from",
+                "default": "l0"
+              },
+              "request_description": {
+                "type": "string",
+                "description": "Optional description"
+              },
+              "use_dev":{
+                "type": "boolean",
+                "description": "Use development data instead of production data",
+                "default": false
+              }
+            },
+            "required": ["request_instrument"],
+            "additionalProperties": false
+          },
+          {
+            "type": "object",
+            "properties": {
+              "request_filenames": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9_\\-\\.]+$"
+                },
+                "minItems": 1
+              },
+              "request_description": {
+                "type": "string",
+                "description": "Optional description"
+              },
+              "use_dev":{
+                "type": "boolean",
+                "description": "Use development data instead of production data",
+                "default": false
+              }
+            },
+            "required": ["request_filenames"],
+            "additionalProperties": false
+          }
+        ]
+      }
+    }
+  },
+  "required": ["requests"],
+  "additionalProperties": false
+}
