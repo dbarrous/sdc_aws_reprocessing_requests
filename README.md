@@ -1,4 +1,4 @@
-# HERMES Data Reprocessing Workflow (Python Implementation)
+# {MISSION NAME HERE} Data Reprocessing Workflow (Python Implementation)
 
 ## Workflow Components
 
@@ -22,11 +22,5 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# Test validation
-python -m scripts.validator tests/valid_request.json
-
-# Test payload generation
-python -m scripts.payload_generator tests/valid_request.json
-
-# Test workflow
-python -m workflows.payload_generation tests/valid_request.json hermes-processor
+# How to test if a request is valid locally
+python -m scripts.validator requests/submit/request.json
