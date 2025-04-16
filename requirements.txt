@@ -2,3 +2,5 @@ boto3>=1.26.0
 jsonschema>=4.17.0
 python-dateutil>=2.8.0
 PyYAML>=6.0
+swxsoc @ git+https://github.com/swxsoc/swxsoc.git
+
