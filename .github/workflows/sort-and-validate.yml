@@ -8,15 +8,14 @@ on:
 
 env:
   PYTHON_VERSION: '3.12'
-
 jobs:
   validate-and-sort:
     name: Validate and Sort Request
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required to push changes back to PR
+      contents: write
       pull-requests: write
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -37,6 +36,7 @@ jobs:
           REQUEST_PATH=$(find . -name "request.json" -path "./requests/submit/*")
           if [ -z "$REQUEST_PATH" ]; then
             echo "::error::No request.json found in PR changes"
+            echo "error=No request.json found in PR changes" >> $GITHUB_OUTPUT
             exit 1
           fi
           echo "request_path=$REQUEST_PATH" >> $GITHUB_OUTPUT
@@ -44,10 +44,11 @@ jobs:
       - name: Run file sorter
         id: process-request
         run: |
+          set -o pipefail
           python scripts/rename_sorter.py \
             --request-file "${{ steps.find-request.outputs.request_path }}" \
             --username "${{ github.actor }}" \
-            --timestamp "$(date +%Y%m%d%H%M%S)"
+            --timestamp "$(date +%Y%m%d%H%M%S)" | tee sorter_output.txt
 
       - name: Commit sorted request
         if: success()
@@ -57,26 +58,30 @@ jobs:
           git add .
           git commit -m "[ci skip] Automated request sorting" || echo "No changes to commit"
           git push origin HEAD:${{ github.head_ref }}
-  generate-payloads:
-    name: Generate Payloads
-    needs: validate-and-sort
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Comment on PR - success
+        if: success()
+        uses: actions/github-script@v7
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync('sorter_output.txt', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ **Request Validated and Sorted**\n\n**Sorter Output:**\n\`\`\`\n${output}\n\`\`\`\nThe request file has been successfully sorted and committed.`
+            });
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Generate final payloads
-        run: |
-          # Add your payload generation and Lambda invocation logic here
-          echo "Payload generation would execute for:"
-          find requests/ -name "*.json" -exec echo "Processing {}" \;
+      - name: Comment on PR - failure
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const error = `${{ steps.find-request.outputs.error || 'Validation or sorter script failed.' }}`;
+            github.rest.issues.createComment({
+              issue_number: context.payload.pull_request.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `❌ **Request Validation Failed**\n\n**Error:**\n\`\`\`\n${error}\n\`\`\`\nPlease fix the request and push again.`
+            });

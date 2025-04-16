@@ -119,3 +119,6 @@ logs/
 
 # Other
 *.sqlite3
+
+# Text files that are not requirements.txt
+*.txt
