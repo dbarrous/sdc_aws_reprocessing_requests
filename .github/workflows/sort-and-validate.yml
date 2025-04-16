@@ -44,7 +44,7 @@ jobs:
       - name: Run file sorter
         id: process-request
         run: |
-          python scripts/file_sorter.py \
+          python scripts/rename_sorter.py \
             --request-file "${{ steps.find-request.outputs.request_path }}" \
             --username "${{ github.actor }}" \
             --timestamp "$(date +%Y%m%d%H%M%S)"
