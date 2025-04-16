@@ -38,7 +38,7 @@ You can validate your request locally before submitting:
 
 ```bash
 pip install -r requirements.txt
-python scripts/validator.py --request-file requests/submit/request.json
+python scripts/validator.py requests/submit/request.json
 ```
 
 ### Step 5: Commit and Push Your Changes
