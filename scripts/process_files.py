@@ -1,3 +1,4 @@
+import os
 import sys
 import json
 import logging
@@ -39,9 +40,10 @@ def process_file(file_path, validator, generator, invoker):
         return (0, 0, 1)
 
 def main():
+
     validator = RequestValidator()
     generator = PayloadGenerator()
-    invoker = LambdaInvoker("padre_sdc_aws_processing_lambda_function")
+    invoker = LambdaInvoker()
     
     total = {"success": 0, "failure": 0, "errors": 0}
 
