@@ -34,7 +34,7 @@ jobs:
       - name: Find request.json
         id: find-request
         run: |
-          REQUEST_PATH=$(git diff --name-only origin/main...HEAD | grep 'request.json' | grep -v '^requests/submit/')
+          REQUEST_PATH=$(find . -name "request.json" -path "./requests/submit/*")
           if [ -z "$REQUEST_PATH" ]; then
             echo "::error::No request.json found in PR changes"
             exit 1
