@@ -1,3 +1,4 @@
+import os
 import boto3
 import json
 import sys
@@ -5,9 +6,11 @@ from typing import List, Dict, Any
 
 
 class LambdaInvoker:
-    def __init__(self, lambda_name: str, region: str = "us-east-1"):
+    def __init__(self, region: str = "us-east-1"):
         self.lambda_client = boto3.client("lambda", region_name=region)
-        self.lambda_name = lambda_name
+        
+        mission_name = os.environ.get("SWXSOC_MISSION", "padre")
+        self.lambda_name = f"{mission_name}_sdc_aws_processing_lambda_function"
 
     def invoke_with_payloads(
         self, payloads: List[Dict[str, Any]]
@@ -17,13 +20,19 @@ class LambdaInvoker:
 
         for original_payload in payloads:
             try:
+                key = original_payload.get("key")
+                bucket = original_payload.get("bucket")
+                
+                is_dev = True if "dev-" in bucket else False
+                
+                lambda_name = f"dev-{self.lambda_name}" if is_dev else self.lambda_name
                 # Convert the simple payload format to S3 event structure
                 s3_event_payload = {
                     "Records": [
                         {
                             "s3": {
-                                "bucket": {"name": original_payload["bucket"]},
-                                "object": {"key": original_payload["key"]},
+                                "bucket": {"name": bucket},
+                                "object": {"key": key},
                             }
                         }
                     ]
@@ -33,9 +42,9 @@ class LambdaInvoker:
                 sns_event = {
                     "Records": [{"Sns": {"Message": json.dumps(s3_event_payload)}}]
                 }
-
+                
                 response = self.lambda_client.invoke(
-                    FunctionName=self.lambda_name,
+                    FunctionName=lambda_name,
                     InvocationType="Event",
                     Payload=json.dumps(sns_event).encode("utf-8"),
                 )
@@ -52,7 +61,7 @@ class LambdaInvoker:
                     }
                 )
 
-                print(f"Invoked {self.lambda_name} with: {original_payload['key']}")
+                print(f"Invoked {lambda_name} with: {original_payload['key']}")
 
             except Exception as e:
                 print(f"Error with {original_payload.get('key', 'unknown')}: {e}")
