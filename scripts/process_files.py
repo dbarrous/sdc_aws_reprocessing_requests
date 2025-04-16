@@ -1,9 +1,9 @@
 import sys
 import json
 import logging
-from scripts.validator import RequestValidator
-from scripts.payload_generator import PayloadGenerator
-from scripts.lambda_invoker import LambdaInvoker
+from validator import RequestValidator
+from payload_generator import PayloadGenerator
+from lambda_invoker import LambdaInvoker
 
 def process_file(file_path, validator, generator, invoker):
     try:
